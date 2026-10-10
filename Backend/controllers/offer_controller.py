@@ -1,92 +1,196 @@
+
 from config.db import get_connection
 
 
+# --------------------------------------------------
+# GET ALL OFFERS (existing CRUD)
+# --------------------------------------------------
 def get_all_offers():
-    connection = get_connection()
-    cursor = connection.cursor()
+    connection = None
+    cursor = None
 
-    cursor.execute("""
-        SELECT Offer_ID, Application_ID, Offer_Date,
-               Offered_Package_LPA, Offer_Status
-        FROM Offers
-    """)
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    columns = [col[0] for col in cursor.description]
-    offers = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.execute("""
+            SELECT Offer_ID, Application_ID, Offer_Date,
+                   Offered_Package_LPA, Offer_Status
+            FROM Offers
+            ORDER BY Offer_Date DESC, Offer_ID DESC
+        """)
 
-    cursor.close()
-    connection.close()
+        columns = [col[0] for col in cursor.description]
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
 
-    return offers
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
 
 
+# --------------------------------------------------
+# CREATE OFFER (existing CRUD)
+# --------------------------------------------------
 def create_offer(offer):
-    connection = get_connection()
-    cursor = connection.cursor()
+    connection = None
+    cursor = None
 
-    cursor.execute("""
-        INSERT INTO Offers
-        (Offer_ID, Application_ID, Offer_Date,
-         Offered_Package_LPA, Offer_Status)
-        VALUES
-        (:1, :2, TO_DATE(:3, 'YYYY-MM-DD'), :4, :5)
-    """, (
-        offer["Offer_ID"],
-        offer["Application_ID"],
-        offer["Offer_Date"],
-        offer["Offered_Package_LPA"],
-        offer["Offer_Status"]
-    ))
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    connection.commit()
+        cursor.execute("""
+            INSERT INTO Offers
+                (Offer_ID, Application_ID, Offer_Date,
+                 Offered_Package_LPA, Offer_Status)
+            VALUES
+                (:1, :2, TO_DATE(:3, 'YYYY-MM-DD'), :4, :5)
+        """, (
+            offer["Offer_ID"],
+            offer["Application_ID"],
+            offer["Offer_Date"],
+            offer["Offered_Package_LPA"],
+            offer["Offer_Status"]
+        ))
 
-    cursor.close()
-    connection.close()
+        connection.commit()
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
 
 
+# --------------------------------------------------
+# UPDATE OFFER (existing CRUD)
+# --------------------------------------------------
 def update_offer(offer_id, offer):
-    connection = get_connection()
-    cursor = connection.cursor()
+    connection = None
+    cursor = None
 
-    cursor.execute("""
-        UPDATE Offers
-        SET Application_ID = :1,
-            Offer_Date = TO_DATE(:2, 'YYYY-MM-DD'),
-            Offered_Package_LPA = :3,
-            Offer_Status = :4
-        WHERE Offer_ID = :5
-    """, (
-        offer["Application_ID"],
-        offer["Offer_Date"],
-        offer["Offered_Package_LPA"],
-        offer["Offer_Status"],
-        offer_id
-    ))
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    rows_updated = cursor.rowcount
+        cursor.execute("""
+            UPDATE Offers
+            SET Application_ID = :1,
+                Offer_Date = TO_DATE(:2, 'YYYY-MM-DD'),
+                Offered_Package_LPA = :3,
+                Offer_Status = :4
+            WHERE Offer_ID = :5
+        """, (
+            offer["Application_ID"],
+            offer["Offer_Date"],
+            offer["Offered_Package_LPA"],
+            offer["Offer_Status"],
+            offer_id
+        ))
 
-    connection.commit()
+        rows_updated = cursor.rowcount
+        connection.commit()
 
-    cursor.close()
-    connection.close()
+        return rows_updated
 
-    return rows_updated
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
 
 
+# --------------------------------------------------
+# DELETE OFFER (existing CRUD)
+# --------------------------------------------------
 def delete_offer(offer_id):
-    connection = get_connection()
-    cursor = connection.cursor()
+    connection = None
+    cursor = None
 
-    cursor.execute("""
-        DELETE FROM Offers
-        WHERE Offer_ID = :1
-    """, (offer_id,))
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
 
-    rows_deleted = cursor.rowcount
+        cursor.execute("""
+            DELETE FROM Offers
+            WHERE Offer_ID = :1
+        """, (offer_id,))
 
-    connection.commit()
+        rows_deleted = cursor.rowcount
+        connection.commit()
 
-    cursor.close()
-    connection.close()
+        return rows_deleted
 
-    return rows_deleted
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
+
+
+# --------------------------------------------------
+# GET OFFERS FOR THE LOGGED-IN STUDENT
+# --------------------------------------------------
+def get_my_offers(student_id):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT
+                o.Offer_ID,
+                o.Application_ID,
+                j.Job_ID,
+                j.Job_Title,
+                c.Company_Name,
+                o.Offer_Date,
+                o.Offered_Package_LPA,
+                o.Offer_Status
+            FROM Offers o
+            JOIN Applications a
+                ON o.Application_ID = a.Application_ID
+            JOIN Job_Postings j
+                ON a.Job_ID = j.Job_ID
+            JOIN Placement_Drives d
+                ON j.Drive_ID = d.Drive_ID
+            JOIN Companies c
+                ON d.Company_ID = c.Company_ID
+            WHERE a.Student_ID = :1
+            ORDER BY o.Offer_Date DESC, o.Offer_ID DESC
+        """, (student_id,))
+
+        columns = [col[0] for col in cursor.description]
+
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
