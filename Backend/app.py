@@ -12,6 +12,7 @@ from routes.interview_routes import interview_routes
 from routes.result_routes import result_routes
 from routes.offer_routes import offer_routes
 from routes.user_routes import user_routes
+from routes.dashboard_routes import dashboard_routes
 
 from auth.routes import auth_routes
 
@@ -41,6 +42,7 @@ app.register_blueprint(result_routes)
 app.register_blueprint(offer_routes)
 app.register_blueprint(user_routes)
 app.register_blueprint(auth_routes)
+app.register_blueprint(dashboard_routes)
 
 
 @app.route("/")

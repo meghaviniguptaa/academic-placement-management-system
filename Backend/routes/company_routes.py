@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 
+from auth.decorators import roles_required
 from controllers.company_controller import (
     get_all_companies,
     create_company,
@@ -13,6 +14,7 @@ company_routes = Blueprint("company_routes", __name__)
 
 # GET - Read all companies
 @company_routes.route("/api/companies", methods=["GET"])
+@roles_required("ADMIN")
 def get_companies():
     companies = get_all_companies()
     return jsonify(companies)
@@ -20,6 +22,7 @@ def get_companies():
 
 # POST - Create a company
 @company_routes.route("/api/companies", methods=["POST"])
+@roles_required("ADMIN")
 def add_company():
     company = request.get_json()
 
@@ -32,6 +35,7 @@ def add_company():
 
 # PUT - Update a company
 @company_routes.route("/api/companies/<int:company_id>", methods=["PUT"])
+@roles_required("ADMIN")
 def edit_company(company_id):
     company = request.get_json()
 
@@ -49,6 +53,7 @@ def edit_company(company_id):
 
 # DELETE - Delete a company
 @company_routes.route("/api/companies/<int:company_id>", methods=["DELETE"])
+@roles_required("ADMIN")
 def remove_company(company_id):
     rows_deleted = delete_company(company_id)
 
