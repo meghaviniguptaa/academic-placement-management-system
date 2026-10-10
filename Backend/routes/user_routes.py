@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 
 from controllers.user_controller import (
     get_all_users,
@@ -16,14 +17,35 @@ def get_users():
     return jsonify(users)
 
 
+
 @user_routes.route("/api/users", methods=["POST"])
 def add_user():
-    user = request.get_json()
-    create_user(user)
+    user = request.get_json(silent=True)
 
-    return jsonify({
-        "message": "User created successfully"
-    }), 201
+    if not isinstance(user, dict):
+        return jsonify({
+            "message": "A JSON request body is required."
+        }), 400
+
+    required = ["User_ID", "Username", "Password", "Role"]
+
+    if any(not user.get(field) for field in required):
+        return jsonify({
+            "message": "User_ID, Username, Password and Role are required."
+        }), 400
+
+    try:
+        create_user(user)
+        return jsonify({
+            "message": "User created successfully."
+        }), 201
+
+    except Exception:
+        current_app.logger.exception("User creation failed")
+        return jsonify({
+            "message": "Unable to create user."
+        }), 400
+
 
 
 @user_routes.route("/api/users/<int:user_id>", methods=["PUT"])
