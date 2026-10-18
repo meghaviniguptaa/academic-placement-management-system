@@ -16,6 +16,7 @@ student_routes = Blueprint("student_routes", __name__)
 
 # GET - Read all students
 @student_routes.route("/api/students", methods=["GET"])
+@roles_required("ADMIN")
 def get_students():
     students = get_all_students()
     return jsonify(students)
@@ -23,6 +24,7 @@ def get_students():
 
 # POST - Create a student
 @student_routes.route("/api/students", methods=["POST"])
+@roles_required("ADMIN")
 def add_student():
     student = request.get_json()
 
@@ -35,6 +37,7 @@ def add_student():
 
 # PUT - Update a student
 @student_routes.route("/api/students/<int:student_id>", methods=["PUT"])
+@roles_required("ADMIN")
 def edit_student(student_id):
     student = request.get_json()
 
@@ -52,6 +55,7 @@ def edit_student(student_id):
 
 # DELETE - Delete a student
 @student_routes.route("/api/students/<int:student_id>", methods=["DELETE"])
+@roles_required("ADMIN")
 def remove_student(student_id):
     rows_deleted = delete_student(student_id)
 

@@ -193,3 +193,181 @@ def get_my_interview_results(student_id):
             cursor.close()
         if connection is not None:
             connection.close()
+
+# --------------------------------------------------
+# RECRUITER INTERVIEW ROUND MANAGEMENT
+# --------------------------------------------------
+
+def get_company_interview_rounds(company_id):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT
+                ir.Round_ID,
+                ir.Job_ID,
+                ir.Round_Number,
+                ir.Round_Type
+            FROM Interview_Rounds ir
+            JOIN Job_Postings j
+                ON ir.Job_ID = j.Job_ID
+            JOIN Placement_Drives d
+                ON j.Drive_ID = d.Drive_ID
+            WHERE d.Company_ID = :1
+            ORDER BY ir.Job_ID, ir.Round_Number
+        """, (company_id,))
+
+        columns = [col[0] for col in cursor.description]
+
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
+
+
+def create_company_interview_round(company_id, round_data):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            INSERT INTO Interview_Rounds
+                (Round_ID, Job_ID, Round_Number, Round_Type)
+            SELECT
+                :1, j.Job_ID, :2, :3
+            FROM Job_Postings j
+            JOIN Placement_Drives d
+                ON j.Drive_ID = d.Drive_ID
+            WHERE j.Job_ID = :4
+              AND d.Company_ID = :5
+        """, (
+            round_data["Round_ID"],
+            round_data["Round_Number"],
+            round_data["Round_Type"],
+            round_data["Job_ID"],
+            company_id
+        ))
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            raise ValueError("Job does not belong to your company.")
+
+        connection.commit()
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
+
+
+def update_company_interview_round(
+    company_id,
+    round_id,
+    round_data
+):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE Interview_Rounds ir
+            SET ir.Job_ID = :1,
+                ir.Round_Number = :2,
+                ir.Round_Type = :3
+            WHERE ir.Round_ID = :4
+              AND EXISTS (
+                  SELECT 1
+                  FROM Job_Postings j
+                  JOIN Placement_Drives d
+                      ON j.Drive_ID = d.Drive_ID
+                  WHERE j.Job_ID = ir.Job_ID
+                    AND d.Company_ID = :5
+              )
+        """, (
+            round_data["Job_ID"],
+            round_data["Round_Number"],
+            round_data["Round_Type"],
+            round_id,
+            company_id
+        ))
+
+        rows_updated = cursor.rowcount
+
+        connection.commit()
+
+        return rows_updated
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
+
+
+def delete_company_interview_round(company_id, round_id):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            DELETE FROM Interview_Rounds ir
+            WHERE ir.Round_ID = :1
+              AND EXISTS (
+                  SELECT 1
+                  FROM Job_Postings j
+                  JOIN Placement_Drives d
+                      ON j.Drive_ID = d.Drive_ID
+                  WHERE j.Job_ID = ir.Job_ID
+                    AND d.Company_ID = :2
+              )
+        """, (
+            round_id,
+            company_id
+        ))
+
+        rows_deleted = cursor.rowcount
+
+        connection.commit()
+
+        return rows_deleted
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()

@@ -294,3 +294,96 @@ def apply_for_job(student_id, job_id):
             cursor.close()
         if connection is not None:
             connection.close()
+
+# --------------------------------------------------
+# GET APPLICATIONS FOR RECRUITER'S COMPANY
+# --------------------------------------------------
+def get_company_applications(company_id):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT
+                a.Application_ID,
+                a.Student_ID,
+                a.Job_ID,
+                j.Job_Title,
+                a.Application_Date,
+                a.Status
+            FROM Applications a
+            JOIN Job_Postings j
+                ON a.Job_ID = j.Job_ID
+            JOIN Placement_Drives d
+                ON j.Drive_ID = d.Drive_ID
+            WHERE d.Company_ID = :1
+            ORDER BY a.Application_Date DESC,
+                     a.Application_ID DESC
+        """, (company_id,))
+
+        columns = [col[0] for col in cursor.description]
+
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
+
+
+# --------------------------------------------------
+# UPDATE APPLICATION STATUS FOR RECRUITER
+# --------------------------------------------------
+def update_company_application_status(
+    company_id,
+    application_id,
+    status
+):
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE Applications a
+            SET a.Status = :1
+            WHERE a.Application_ID = :2
+              AND EXISTS (
+                  SELECT 1
+                  FROM Job_Postings j
+                  JOIN Placement_Drives d
+                      ON j.Drive_ID = d.Drive_ID
+                  WHERE j.Job_ID = a.Job_ID
+                    AND d.Company_ID = :3
+              )
+        """, (
+            status,
+            application_id,
+            company_id
+        ))
+
+        rows_updated = cursor.rowcount
+
+        connection.commit()
+
+        return rows_updated
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        raise
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
