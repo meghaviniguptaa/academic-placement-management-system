@@ -9,7 +9,9 @@ from controllers.application_controller import (
     update_application,
     delete_application,
     get_my_applications,
-    apply_for_job
+    apply_for_job,
+    get_company_applications,
+    update_company_application_status
 )
 
 application_routes = Blueprint("application_routes", __name__)
@@ -176,4 +178,87 @@ def student_apply_for_job():
         current_app.logger.exception("Job application failed")
         return jsonify({
             "message": "Unable to submit application."
+        }), 500
+
+# --------------------------------------------------
+# GET - View applications for recruiter's company
+# --------------------------------------------------
+@application_routes.route(
+    "/api/recruiter/applications",
+    methods=["GET"]
+)
+@roles_required("RECRUITER")
+def get_recruiter_applications():
+    company_id = session.get("company_id")
+
+    if not is_positive_int(company_id):
+        return jsonify({
+            "message": "Recruiter account is not linked to a company."
+        }), 403
+
+    try:
+        applications = get_company_applications(company_id)
+        return jsonify(applications), 200
+
+    except Exception:
+        current_app.logger.exception(
+            "Fetching recruiter applications failed"
+        )
+        return jsonify({
+            "message": "Unable to fetch applications."
+        }), 500
+
+
+# --------------------------------------------------
+# PUT - Update application status
+# --------------------------------------------------
+@application_routes.route(
+    "/api/recruiter/applications/<int:application_id>",
+    methods=["PUT"]
+)
+@roles_required("RECRUITER")
+def update_recruiter_application(application_id):
+    company_id = session.get("company_id")
+
+    if not is_positive_int(company_id):
+        return jsonify({
+            "message": "Recruiter account is not linked to a company."
+        }), 403
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "message": "A JSON request body is required."
+        }), 400
+
+    status = data.get("Status")
+
+    if not isinstance(status, str) or not status.strip():
+        return jsonify({
+            "message": "A valid Status is required."
+        }), 400
+
+    try:
+        rows_updated = update_company_application_status(
+            company_id,
+            application_id,
+            status.strip()
+        )
+
+        if rows_updated == 0:
+            return jsonify({
+                "message": "Application not found for your company."
+            }), 404
+
+        return jsonify({
+            "message": "Application status updated successfully."
+        }), 200
+
+    except Exception:
+        current_app.logger.exception(
+            "Updating recruiter application failed"
+        )
+        return jsonify({
+            "message": "Unable to update application status."
         }), 500

@@ -9,7 +9,11 @@ from controllers.job_controller import (
     update_job,
     delete_job,
     get_student_jobs,
-    get_student_job_details
+    get_student_job_details,
+    get_company_jobs,
+    create_company_job,
+    update_company_job,
+    delete_company_job
 )
 
 job_routes = Blueprint("job_routes", __name__)
@@ -181,4 +185,136 @@ def student_job_details(job_id):
         current_app.logger.exception("Fetching job details failed")
         return jsonify({
             "message": "Unable to fetch job details."
+        }), 500
+
+# --------------------------------------------------
+# RECRUITER JOB MANAGEMENT
+# --------------------------------------------------
+
+@job_routes.route("/api/recruiter/jobs", methods=["GET"])
+@roles_required("RECRUITER")
+def get_recruiter_jobs():
+    company_id = session.get("company_id")
+
+    if not company_id:
+        return jsonify({
+            "message": "No company is associated with this recruiter."
+        }), 400
+
+    try:
+        jobs = get_company_jobs(company_id)
+        return jsonify(jobs), 200
+
+    except Exception:
+        current_app.logger.exception("Fetching recruiter jobs failed")
+        return jsonify({
+            "message": "Unable to fetch recruiter jobs."
+        }), 500
+
+
+@job_routes.route("/api/recruiter/jobs", methods=["POST"])
+@roles_required("RECRUITER")
+def add_recruiter_job():
+    company_id = session.get("company_id")
+
+    if not company_id:
+        return jsonify({
+            "message": "No company is associated with this recruiter."
+        }), 400
+
+    job = request.get_json(silent=True)
+
+    if not isinstance(job, dict):
+        return jsonify({
+            "message": "A JSON request body is required."
+        }), 400
+
+    try:
+        create_company_job(company_id, job)
+
+        return jsonify({
+            "message": "Job posting created successfully."
+        }), 201
+
+    except ValueError as e:
+        return jsonify({
+            "message": str(e)
+        }), 400
+
+    except Exception:
+        current_app.logger.exception("Creating recruiter job failed")
+        return jsonify({
+            "message": "Unable to create job posting."
+        }), 500
+
+
+@job_routes.route("/api/recruiter/jobs/<int:job_id>", methods=["PUT"])
+@roles_required("RECRUITER")
+def edit_recruiter_job(job_id):
+    company_id = session.get("company_id")
+
+    if not company_id:
+        return jsonify({
+            "message": "No company is associated with this recruiter."
+        }), 400
+
+    job = request.get_json(silent=True)
+
+    if not isinstance(job, dict):
+        return jsonify({
+            "message": "A JSON request body is required."
+        }), 400
+
+    try:
+        rows_updated = update_company_job(
+            company_id,
+            job_id,
+            job
+        )
+
+        if rows_updated == 0:
+            return jsonify({
+                "message": "Job posting not found for your company."
+            }), 404
+
+        return jsonify({
+            "message": "Job posting updated successfully."
+        }), 200
+
+    except Exception:
+        current_app.logger.exception("Updating recruiter job failed")
+        return jsonify({
+            "message": "Unable to update job posting."
+        }), 500
+
+
+@job_routes.route("/api/recruiter/jobs/<int:job_id>", methods=["DELETE"])
+@roles_required("RECRUITER")
+def remove_recruiter_job(job_id):
+    company_id = session.get("company_id")
+
+    if not company_id:
+        return jsonify({
+            "message": "No company is associated with this recruiter."
+        }), 400
+
+    try:
+        rows_deleted = delete_company_job(
+            company_id,
+            job_id
+        )
+
+        if rows_deleted == 0:
+            return jsonify({
+                "message": "Job posting not found for your company."
+            }), 404
+
+        return jsonify({
+            "message": "Job posting deleted successfully."
+        }), 200
+
+    except Exception:
+        current_app.logger.exception("Deleting recruiter job failed")
+        return jsonify({
+            "message": "Unable to delete job posting."
         }), 500

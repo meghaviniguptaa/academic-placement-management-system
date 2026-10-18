@@ -13,6 +13,7 @@ from routes.result_routes import result_routes
 from routes.offer_routes import offer_routes
 from routes.user_routes import user_routes
 from routes.dashboard_routes import dashboard_routes
+from routes.recruiter_routes import recruiter_routes
 
 from auth.routes import auth_routes
 
@@ -43,6 +44,7 @@ app.register_blueprint(offer_routes)
 app.register_blueprint(user_routes)
 app.register_blueprint(auth_routes)
 app.register_blueprint(dashboard_routes)
+app.register_blueprint(recruiter_routes)
 
 
 @app.route("/")
@@ -51,4 +53,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

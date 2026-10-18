@@ -9,7 +9,11 @@ from controllers.offer_controller import (
     create_offer,
     update_offer,
     delete_offer,
-    get_my_offers
+    get_my_offers,
+    get_company_offers,
+    create_company_offer,
+    update_company_offer,
+    delete_company_offer
 )
 
 offer_routes = Blueprint("offer_routes", __name__)
@@ -127,3 +131,115 @@ def get_student_offers():
         return jsonify({
             "message": "Unable to fetch offers."
         }), 500
+
+@offer_routes.route("/api/recruiter/offers", methods=["GET"])
+@roles_required("RECRUITER")
+def get_recruiter_offers():
+    company_id = session.get("company_id")
+
+    if not is_positive_int(company_id):
+        return jsonify({"message": "Recruiter account is not linked to a company."}), 403
+
+    try:
+        offers = get_company_offers(company_id)
+        return jsonify(offers), 200
+    except Exception:
+        current_app.logger.exception("Fetching recruiter offers failed")
+        return jsonify({"message": "Unable to fetch offers."}), 500
+
+
+@offer_routes.route("/api/recruiter/offers", methods=["POST"])
+@roles_required("RECRUITER")
+def add_recruiter_offer():
+    company_id = session.get("company_id")
+
+    if not is_positive_int(company_id):
+        return jsonify({"message": "Recruiter account is not linked to a company."}), 403
+
+    offer = request.get_json(silent=True)
+
+    if not isinstance(offer, dict):
+        return jsonify({"message": "A JSON request body is required."}), 400
+
+    required_fields = [
+        "Offer_ID",
+        "Application_ID",
+        "Offer_Date",
+        "Offered_Package_LPA",
+        "Offer_Status"
+    ]
+
+    if any(field not in offer for field in required_fields):
+        return jsonify({"message": "Missing required offer fields."}), 400
+
+    try:
+        create_company_offer(company_id, offer)
+        return jsonify({"message": "Offer created successfully."}), 201
+    except ValueError as exc:
+        return jsonify({"message": str(exc)}), 400
+    except Exception:
+        current_app.logger.exception("Creating recruiter offer failed")
+        return jsonify({"message": "Unable to create offer."}), 500
+
+
+@offer_routes.route("/api/recruiter/offers/<int:offer_id>", methods=["PUT"])
+@roles_required("RECRUITER")
+def edit_recruiter_offer(offer_id):
+    company_id = session.get("company_id")
+
+    if not is_positive_int(company_id):
+        return jsonify({"message": "Recruiter account is not linked to a company."}), 403
+
+    offer = request.get_json(silent=True)
+
+    if not isinstance(offer, dict):
+        return jsonify({"message": "A JSON request body is required."}), 400
+
+    required_fields = [
+        "Offer_Date",
+        "Offered_Package_LPA",
+        "Offer_Status"
+    ]
+
+    if any(field not in offer for field in required_fields):
+        return jsonify({"message": "Missing required offer fields."}), 400
+
+    try:
+        rows_updated = update_company_offer(
+            company_id,
+            offer_id,
+            offer
+        )
+
+        if rows_updated == 0:
+            return jsonify({"message": "Offer not found."}), 404
+
+        return jsonify({"message": "Offer updated successfully."}), 200
+
+    except Exception:
+        current_app.logger.exception("Updating recruiter offer failed")
+        return jsonify({"message": "Unable to update offer."}), 500
+
+
+@offer_routes.route("/api/recruiter/offers/<int:offer_id>", methods=["DELETE"])
+@roles_required("RECRUITER")
+def remove_recruiter_offer(offer_id):
+    company_id = session.get("company_id")
+
+    if not is_positive_int(company_id):
+        return jsonify({"message": "Recruiter account is not linked to a company."}), 403
+
+    try:
+        rows_deleted = delete_company_offer(
+            company_id,
+            offer_id
+        )
+
+        if rows_deleted == 0:
+            return jsonify({"message": "Offer not found."}), 404
+
+        return jsonify({"message": "Offer deleted successfully."}), 200
+
+    except Exception:
+        current_app.logger.exception("Deleting recruiter offer failed")
+        return jsonify({"message": "Unable to delete offer."}), 500
