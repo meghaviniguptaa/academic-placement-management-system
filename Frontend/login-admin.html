@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin login · Placement Cell</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-role="admin" data-expected-role="ADMIN">
+  <div class="login">
+    <section class="login-side">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">A</span>
+        <span><div class="brand-name">Placement Cell</div><div class="brand-role">Admin console</div></span>
+      </a>
+      <div>
+        <h1>Keep every placement record in order.</h1>
+        <p>Sign in to manage students, companies, drives, applications, offers and user accounts.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Full control of all placement records</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Placement statistics at a glance</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Create and manage user accounts</span></li>
+        </ul>
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75)">Academic Placement Management System</div>
+    </section>
+    <main class="login-main">
+      <div class="login-card">
+        <h2>Admin login</h2>
+        <p>Use the username and password issued by the placement cell.</p>
+        <div id="login-error" class="form-error hidden" role="alert"></div>
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="username">Username</label>
+            <input class="input" id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="pw-wrap">
+              <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+              <button type="button" class="pw-toggle" id="pw-toggle" aria-pressed="false">Show</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="login-submit" type="submit">Sign in</button>
+        </form>
+        <div class="login-links">
+          <span>Not a admin?</span>
+          <a href="login-student.html">Student login</a>
+        <a href="login-recruiter.html">Recruiter login</a>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
