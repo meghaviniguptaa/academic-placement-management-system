@@ -355,7 +355,10 @@ SELECT
     (SELECT COUNT(*)
      FROM Offers) AS Total_Offers,
 
-    (SELECT COUNT(DISTINCT Application_ID)
-     FROM Offers) AS Students_With_Offers
+    (SELECT COUNT(DISTINCT a.Student_ID)
+     FROM Applications a
+     JOIN Offers o
+       ON a.Application_ID = o.Application_ID) AS Students_With_Offers
 
 FROM DUAL;
+/

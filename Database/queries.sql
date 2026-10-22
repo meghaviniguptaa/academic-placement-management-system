@@ -75,7 +75,10 @@ SELECT s1.Name AS Student_1,
        s1.CGPA AS Student_1_CGPA,
        s2.CGPA AS Student_2_CGPA
 FROM Students s1
-JOIN Students s2 ON s1.CGPA > s2.CGPA;
+JOIN Students s2
+    ON s1.CGPA > s2.CGPA
+WHERE s1.CGPA - s2.CGPA >= 1
+ORDER BY s1.CGPA DESC;
 
 -- 13. Nested subquery - average CGPA
 SELECT Name, CGPA
